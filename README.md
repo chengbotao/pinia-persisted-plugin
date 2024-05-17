@@ -2,12 +2,9 @@
 
 `Pinia` 状态管理的持久化插件。它可以将 `Pinia` 的状态持久化到本地存储(如 `LocalStorage` 或 `SessionStorage` ),并在页面刷新后自动恢复这些状态，从而实现了状态的持久化。  
 
-::: tip 该插件的主要作用是解决以下问题：  
-
-_在页面刷新后，Pinia 状态会被重置，导致用户需要重新进行登录等操作。_
-
-**通过使用该插件，您可以轻松地实现以上功能，而无需手动编写逻辑来处理状态的持久化和恢复。**
-:::
+> 该插件的主要作用是解决以下问题：  
+> _在页面刷新后，Pinia 状态会被重置，导致用户需要重新进行登录等操作。_  
+> **通过使用该插件，您可以轻松地实现以上功能，而无需手动编写逻辑来处理状态的持久化和恢复。**
 
 ## 安装
 
@@ -45,19 +42,20 @@ const useStore = defineStore(key, {
 
 ## 属性&
 
-| 属性                | 说明                                       | 类型                                                        | 默认值                                                                               |
-| ------------------- | ------------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `paths`             | 需要持久化状态属性集合                     | (string\|Path)[] \| undefined                                            | []                                                                                   |
-| `storage`           | 指定存储类型                               | Storage                                                     | localStorage                                                                         |
-| `storageKey`        | 存储中存储状态的键值                       | string                                                      | \_\_VUEX_PERSIST_PLUGIN\_\_                                                          |
-| `getState`          | 自定义获取本地存储中状态的逻辑             | (storage: Storage, key: string) => Record<string, unknown>; | (storage, key) => {return storage.getItem(key) && JSON.parse(storage.getItem(key)!)} |
-| `setState`          | 用于自定义将状态存储到本地存储的逻辑       | (storage: Storage, key: string, value: unknown) => void;    | (storage, key, value) => {storage.setItem(key, JSON.stringify(value));}              |
-| `removeState`       | 用于自定义从本地存储中移除状态的逻辑       | (storage: Storage, key: string) => void;                    | (storage, key) => {storage.removeItem(key)}                                          |
+| 属性          | 说明                                 | 类型                                                        | 默认值                                                                               |
+| ------------- | ------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `paths`       | 需要持久化状态属性集合               | (string\|Path)[] \| undefined                               | []                                                                                   |
+| `storage`     | 指定存储类型                         | Storage                                                     | localStorage                                                                         |
+| `storageKey`  | 存储中存储状态的键值                 | string \| ((id: string) => string)                          | (storeKey) => `${DEFAULT_STORAGE_KEY}${storeKey}`                                    |
+| `getState`    | 自定义获取本地存储中状态的逻辑       | (storage: Storage, key: string) => Record<string, unknown>; | (storage, key) => {return storage.getItem(key) && JSON.parse(storage.getItem(key)!)} |
+| `setState`    | 用于自定义将状态存储到本地存储的逻辑 | (storage: Storage, key: string, value: unknown) => void;    | (storage, key, value) => {storage.setItem(key, JSON.stringify(value));}              |
+| `removeState` | 用于自定义从本地存储中移除状态的逻辑 | (storage: Storage, key: string) => void;                    | (storage, key) => {storage.removeItem(key)}                                          |
 
 ## 方法
 
-|方法名|描述|参数|参数描述|
-| `$hydrate` | 手动触发还原store数据的方法 |          payload?: string[]                                           |还原指定状态恢复初始状态,不传默认还原整个store|
+| 方法名     | 描述                        | 参数               | 参数描述                                       |
+| ---------- | --------------------------- | ------------------ | ---------------------------------------------- |
+| `$hydrate` | 手动触发还原store数据的方法 | payload?: string[] | 还原指定状态恢复初始状态,不传默认还原整个store |
 
 ## 配置
 
@@ -114,30 +112,37 @@ paths: ['count', { paths: ["userInfo.name"], storage: sessionStorage }]
 
 - 类型: Storage
 - 默认值: localStorage
+
 用于指定存储类型，可以是 localStorage、sessionStorage 等。
 
 ### storageKey
 
 - 类型: string | ((id: string) => string)
 - 默认值: (storeKey) => `${DEFAULT_STORAGE_KEY}${storeKey}`
+- DEFAULT_STORAGE_KEY : "\_\_PINIA_PERSIST_PLUGIN\_\_"
+- storeKey : store.$id
+
 用于指定存储中存储状态的键值，默认值为 (storeKey) => `${DEFAULT_STORAGE_KEY}${storeKey}`。
 
 ### getState
 
 - 类型: (storage: Storage, key: string) => Record<string, unknown>
 - 默认值: (storage, key) => {return storage.getItem(key) && JSON.parse(storage.getItem(key)!)}
+
 用于自定义获取本地存储中状态的逻辑，默认使用 localStorage.getItem(key) 并 JSON.parse() 获取状态。
 
 ### setState
 
 - 类型: (storage: Storage, key: string, value: unknown) => void
 - 默认值: (storage, key, value) => {storage.setItem(key, JSON.stringify(value));}
+
 用于自定义将状态存储到本地存储的逻辑，默认使用 localStorage.setItem(key, JSON.stringify(value)) 存储状态。
 
 ### removeState
 
 - 类型: (storage: Storage, key: string) => void
 - 默认值: (storage, key) => {storage.removeItem(key)}
+
 用于自定义从本地存储中移除状态的逻辑，默认使用 localStorage.removeItem(key) 移除状态。
 
 ### $hydrate
