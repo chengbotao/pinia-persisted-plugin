@@ -171,4 +171,48 @@ describe("persistedPlugin", () => {
 			"botaocheng"
 		);
 	});
+	it("持久化参数配置：重置指定持久化状态", async () => {
+		const app = createApp({});
+		const pinia = createPinia();
+		pinia.use(persistedPlugin());
+		app.use(pinia);
+		setActivePinia(pinia);
+		const useStore = defineStore(key, {
+			state: () => ({
+				count: 0,
+				userInfo: {
+					name: "chengbotao",
+					email: "chengbotao5221@163.com",
+				},
+			}),
+			persisted: {
+				storage: localStore,
+				storageKey: "__PERSIST_PLUGIN_2__",
+				paths: [
+					"count",
+					{
+						paths: ["userInfo.name"],
+						storage: sessionStore,
+					},
+				],
+				getState(storage, key) {
+					return storage.get(key) as Record<string, unknown>;
+				},
+				setState(storage, key, value) {
+					storage.set(key, value);
+				},
+				removeState(storage, key) {
+					storage.remove(key);
+				},
+			},
+		});
+		const store = useStore();
+		store.count++;
+		store.userInfo.name = "botaocheng";
+		await nextTick();
+		store.$hydrate();
+		expect(store.count).toBe(0);
+		expect(store.userInfo.name).toBe("chengbotao");
+
+	})
 });

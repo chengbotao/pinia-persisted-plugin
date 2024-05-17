@@ -15,6 +15,9 @@ const DEFAULT_STORAGE = localStorage;
 const DEFAULT_STORAGE_KEY = "__PINIA_PERSIST_PLUGIN__";
 
 declare module "pinia" {
+	export interface PiniaCustomProperties {
+		$hydrate: (payload?: string[])=> void
+	}
 	export interface DefineStoreOptionsBase<S, Store> {
 		persisted?: boolean | Options;
 	}
@@ -70,7 +73,9 @@ export function persistedPlugin(factoryOptions: Options = {}) {
 				? storageKey
 				: storageKey(store.$id),
 		} = persisted as Options;
+
 		paths = Array.isArray(paths) ? paths : Object.keys(initState);
+
 		let unifyPaths: Required<Path>[] = [];
 		let unifyStringPath: Required<Path> = {
 			storage: storeStorage,
@@ -111,9 +116,43 @@ export function persistedPlugin(factoryOptions: Options = {}) {
 				)
 			);
 		}, {});
+
 		if (!isEmpty(saveState)) {
 			store.$patch(saveState);
 		}
+
+		store.$hydrate= (payload?: string[])=>{
+			const mutationState = deepClone(store.$state);
+			if (!payload) {
+				unifyPaths.forEach((path) => {
+					const { storage, storageKey, removeState } = path;
+					removeState(storage, typeof storageKey === "string" ? storageKey : storageKey(store.$id));
+				});
+				store.$patch(deepMerge(store.$state, initState) as Record<string, any>);
+			} else {
+				const mutationMergeState = deepMerge(
+					mutationState,
+					reducerState(initState as Record<string, unknown>, payload)
+				);
+				unifyPaths.forEach((path) => {
+					const { storage, storageKey, getState, setState, paths } = path;
+					let savedKey = getState(storage, typeof storageKey === "string" ? storageKey : storageKey(store.$id));
+					setState(
+						storage,
+						typeof storageKey === "string" ? storageKey : storageKey(store.$id),
+						deepMerge(
+							savedKey,
+							reducerState(
+								mutationMergeState as Record<string, unknown>,
+								paths
+							)
+						)
+					);
+				});
+				store.$patch(deepMerge(store.$state, mutationMergeState) as Record<string, any>);
+			}
+		}
+
 		store.$subscribe(
 			(mutation: SubscriptionCallbackMutation<StateTree>, state: StateTree) => {
 				unifyPaths.forEach((path) => {

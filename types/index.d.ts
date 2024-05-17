@@ -1,6 +1,9 @@
 import { PiniaPluginContext } from 'pinia';
 
 declare module "pinia" {
+    interface PiniaCustomProperties {
+        $hydrate: (payload?: string[]) => void;
+    }
     interface DefineStoreOptionsBase<S, Store> {
         persisted?: boolean | Options;
     }
